@@ -11,8 +11,10 @@ import com.google.gson.Gson;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 
 public class NoteAPI {
     // TODO: Implement the API using OkHttp!
@@ -35,6 +37,7 @@ public class NoteAPI {
         }
         return instance;
     }
+
 
     /**
      * An example of sending a GET request to the server.
@@ -63,6 +66,53 @@ public class NoteAPI {
             e.printStackTrace();
             return null;
         }
+    }
+    @WorkerThread
+    public Note getNote(String title) {
+        // URLs cannot contain spaces, so we replace them with %20.
+        String encodedMsg = title.replace(" ", "%20");
+
+        var request = new Request.Builder()
+                .url("https://sharednotes.goto.ucsd.edu/notes/" + encodedMsg)
+                .method("GET", null)
+                .build();
+
+        try (var response = client.newCall(request).execute()) {
+            assert response.body() != null;
+            var body = response.body().string();
+            Log.i("GET", body);
+            return Note.fromJSON(body);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    @WorkerThread
+    public Note putNote(Note note) {
+        //String post = note.toJSON();
+        // URLs cannot contain spaces, so we replace them with %20.
+        //String encodedMsg = post.replace(" ", "%20");
+        //String noteJson = note.toJSON();
+        //RequestBody body = RequestBody.create(noteJson, MediaType.get("application/json; charset==utf-8"));
+
+        var request = new Request.Builder()
+                .url("https://sharednotes.goto.ucsd.edu/notes/" + note.title) //note.title
+                .method("PUT", null)
+                .build();
+
+        try (var response = client.newCall(request).execute()) {
+            assert response.body() != null;
+            var body = response.body().string();
+            Log.i("PUT", body);
+            return note;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+
+
     }
 
     @AnyThread

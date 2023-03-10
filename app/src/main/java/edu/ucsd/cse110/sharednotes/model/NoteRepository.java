@@ -1,17 +1,30 @@
 package edu.ucsd.cse110.sharednotes.model;
 
+import android.util.Log;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
+import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Observer;
 
+import java.sql.Time;
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
 
 public class NoteRepository {
     private final NoteDao dao;
     private ScheduledFuture<?> poller; // what could this be for... hmm?
+
+    private final NoteAPI noteAPI = new NoteAPI();
+    private OkHttpClient client;
 
     public NoteRepository(NoteDao dao) {
         this.dao = dao;
@@ -93,22 +106,36 @@ public class NoteRepository {
         // TODO: Set up polling background thread (MutableLiveData?)
         // TODO: Refer to TimerService from https://github.com/DylanLukes/CSE-110-WI23-Demo5-V2.
 
+        // Set up a background thread that will poll the server every 3 seconds.
+        // Start by fetching the note from the server _once_ and feeding it into MutableLiveData.
+        // Then, set up a background thread that will poll the server every 3 seconds.
+        // You may (but don't have to) want to cache the LiveData's for each title, so that
+        // you don't create a new polling thread every time you call getRemote with the same title.
+        // You don't need to worry about killing background threads.
+
         // Cancel any previous poller if it exists.
         if (this.poller != null && !this.poller.isCancelled()) {
             poller.cancel(true);
         }
 
-        // Set up a background thread that will poll the server every 3 seconds.
+        //set up a background thread that will poll the server every 3 seconds
+        MutableLiveData<Note> liveNote = new MutableLiveData<>();
 
-        // You may (but don't have to) want to cache the LiveData's for each title, so that
-        // you don't create a new polling thread every time you call getRemote with the same title.
-        // You don't need to worry about killing background threads.
+        var executor = Executors.newSingleThreadScheduledExecutor();
+        this.poller = executor.scheduleAtFixedRate(() -> {
+            var note = NoteAPI.provide().getNote(title);
+            liveNote.postValue(note);
+        },0, 3, TimeUnit.SECONDS);
 
-        throw new UnsupportedOperationException("Not implemented yet");
+        return liveNote;
     }
 
     public void upsertRemote(Note note) {
         // TODO: Implement upsertRemote!
-        throw new UnsupportedOperationException("Not implemented yet");
+        var executor = Executors.newSingleThreadScheduledExecutor();
+
+        executor.scheduleAtFixedRate(() -> {
+            NoteAPI.provide().putNote(note);
+        }, 0, 3, TimeUnit.SECONDS);
     }
 }
