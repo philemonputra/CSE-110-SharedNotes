@@ -90,24 +90,22 @@ public class NoteAPI {
 
     @WorkerThread
     public Note putNote(Note note) {
-        //String post = note.toJSON();
-        // URLs cannot contain spaces, so we replace them with %20.
-        //String encodedMsg = post.replace(" ", "%20");
-        //String noteJson = note.toJSON();
-        //RequestBody body = RequestBody.create(noteJson, MediaType.get("application/json; charset==utf-8"));
-
+        String title = note.title.replace(" ","%20");
+        String noteJson = note.toJSON();
+        RequestBody body = RequestBody.create(new Gson().toJson(note), MediaType.get("application/json"));
         var request = new Request.Builder()
-                .url("https://sharednotes.goto.ucsd.edu/notes/" + note.title) //note.title
-                .method("PUT", null)
+                .url("https://sharednotes.goto.ucsd.edu/notes/" + title) //note.title
+                .method("PUT", body)
                 .build();
-
+        Log.i("PUTNOTE", request.toString());
         try (var response = client.newCall(request).execute()) {
             assert response.body() != null;
-            var body = response.body().string();
-            Log.i("PUT", body);
+            var bd = response.body().string();
+            Log.i("PUT", bd);
             return note;
 
         } catch (Exception e) {
+            Log.i("ERORRRRRR", e.toString());
             e.printStackTrace();
             return null;
         }

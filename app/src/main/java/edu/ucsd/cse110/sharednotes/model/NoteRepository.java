@@ -132,10 +132,10 @@ public class NoteRepository {
 
     public void upsertRemote(Note note) {
         // TODO: Implement upsertRemote!
-        var executor = Executors.newSingleThreadScheduledExecutor();
-
-        executor.scheduleAtFixedRate(() -> {
-            NoteAPI.provide().putNote(note);
-        }, 0, 3, TimeUnit.SECONDS);
+        var executor = Executors.newSingleThreadExecutor();
+        Log.i("PUTNOTE", note.toString());
+        executor.submit(() -> {
+            noteAPI.putNote(note);
+        });
     }
 }
